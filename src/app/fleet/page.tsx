@@ -1,37 +1,85 @@
-import React, { Suspense } from 'react';
-import { getVehicles } from '@/app/actions';
-import FleetBrowser from '@/components/fleet/FleetBrowser';
-import { Sparkles } from 'lucide-react';
+"use client"
 
-export const revalidate = 600; // Cache for 10 minutes
+import { useState } from "react"
+import { motion } from "framer-motion"
+import Link from "next/link"
+import { ChevronRight, Filter, Car, Fuel, Settings, Users } from "lucide-react"
+import { mockVehicles } from "@/lib/mock-data"
 
-export default async function FleetPage() {
-  const vehicles = await getVehicles();
+export default function FleetPage() {
+  const [selectedCategory, setSelectedCategory] = useState("All")
+
+  const categories = ["All", "Sports", "Luxury SUV", "Sedan", "Electric"]
+  
+  const filteredVehicles = selectedCategory === "All" 
+    ? mockVehicles 
+    : mockVehicles.filter(v => v.category === selectedCategory)
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
-      {/* Page Header */}
-      <div className="text-center space-y-3 max-w-xl mx-auto">
-        <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full glass border border-gold-500/20 text-gold-400 text-[10px] font-bold uppercase tracking-widest">
-          <Sparkles className="h-3.5 w-3.5" />
-          <span>Curated Premium Fleet</span>
+    <div className="container mx-auto px-6 py-12">
+      <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+        <div>
+          <h1 className="text-4xl md:text-5xl font-heading font-bold mb-4">Our Fleet</h1>
+          <p className="text-muted-foreground max-w-2xl">Browse our meticulously maintained collection of premium vehicles and find the perfect match for your next journey.</p>
         </div>
-        <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-foreground">
-          Browse Our Vehicles
-        </h1>
-        <p className="text-xs sm:text-sm text-muted-foreground/80 font-medium leading-relaxed">
-          From silent electric supercars to high-clearance family SUVs, select the perfect vehicle for your next elite journey.
-        </p>
+        
+        {/* Simple Filters */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 w-full md:w-auto hide-scrollbar">
+          {categories.map((cat) => (
+            <button 
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`px-4 py-2 rounded-full whitespace-nowrap text-sm font-semibold transition-colors border ${
+                selectedCategory === cat 
+                  ? "bg-primary text-primary-foreground border-primary" 
+                  : "bg-white/5 border-white/10 hover:border-primary/50 text-white"
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Interactive Browser Layout */}
-      <Suspense fallback={
-        <div className="glass border border-border p-12 rounded-3xl text-center text-xs text-muted-foreground">
-          Loading premium fleet browser...
-        </div>
-      }>
-        <FleetBrowser vehicles={vehicles} />
-      </Suspense>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {filteredVehicles.map((car, i) => (
+          <motion.div 
+            key={car.id}
+            className="glass-card flex flex-col h-full group"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 }}
+          >
+            <div className="h-56 overflow-hidden relative rounded-t-2xl">
+              <img src={car.images[0]} alt={car.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+              <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold border border-white/10">
+                {car.category}
+              </div>
+            </div>
+            <div className="p-6 flex flex-col flex-1">
+              <h3 className="text-2xl font-bold mb-1">{car.name}</h3>
+              <p className="text-muted-foreground text-sm mb-4">{car.brand}</p>
+              
+              <div className="grid grid-cols-2 gap-4 mb-6 text-sm text-zinc-300">
+                <div className="flex items-center gap-2"><Users size={16} className="text-primary"/> {car.specs.seats} Seats</div>
+                <div className="flex items-center gap-2"><Settings size={16} className="text-primary"/> {car.specs.transmission}</div>
+                <div className="flex items-center gap-2"><Fuel size={16} className="text-primary"/> {car.specs.fuelType}</div>
+                <div className="flex items-center gap-2"><Car size={16} className="text-primary"/> {car.specs.luggage} Bags</div>
+              </div>
+
+              <div className="mt-auto pt-6 border-t border-white/10 flex items-center justify-between">
+                <div>
+                  <span className="text-2xl font-bold text-white">${car.price}</span>
+                  <span className="text-muted-foreground text-sm">/day</span>
+                </div>
+                <Link href={`/fleet/${car.id}`} className="bg-white/10 hover:bg-primary hover:text-primary-foreground border border-white/20 hover:border-primary px-6 py-2 rounded-lg font-semibold transition-all">
+                  Book Now
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
     </div>
-  );
+  )
 }
